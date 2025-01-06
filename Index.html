@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataVision</title>
+    <script src="https://cdn.plot.ly/plotly-2.26.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #ffffff;
+            color: #000000;
+            transition: all 0.3s ease;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        #dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .chart {
+            width: 100%;
+            height: 400px;
+        }
+        .number-chart {
+            background: #007bff;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 1.5em;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        #upload-container {
+            margin-bottom: 20px;
+        }
+        #export-container button {
+            margin-right: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #dark-mode-toggle {
+            cursor: pointer;
+            font-size: 1.5em;
+        }
+        #error-message {
+            color: red;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        @media (max-width: 768px) {
+            #dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>DataVision</h1>
+        <div id="dark-mode-toggle">🌞</div>
+    </header>
+    <div id="upload-container">
+        <input type="file" id="fileInput" accept=".json" />
+        <p>Upload your JSON data to generate a dashboard.</p>
+        <p id="error-message"></p>
+    </div>
+    <div id="export-container">
+        <button id="downloadPdf" disabled>Download as PDF</button>
+        <button id="printCharts" disabled>Print Charts</button>
+    </div>
+    <div id="dashboard"></div>
+
+    <script>
+        const darkModeToggle = document.getElementById("dark-mode-toggle");
+        const errorMessage = document.getElementById("error-message");
+
+        // Load dark mode preference
+        const userPref = localStorage.getItem("theme");
+        if (userPref === "dark") {
+            document.body.style.backgroundColor = "#333";
+            document.body.style.color = "#fff";
+            darkModeToggle.textContent = "🌙";
+        }
+
+        darkModeToggle.addEventListener("click", () => {
+            if (document.body.style.backgroundColor === "rgb(51, 51, 51)") {
+                document.body.style.backgroundColor = "#fff";
+                document.body.style.color = "#000";
+                darkModeToggle.textContent = "🌞";
+                localStorage.setItem("theme", "light");
+            } else {
+                document.body.style.backgroundColor = "#333";
+                document.body.style.color = "#fff";
+                darkModeToggle.textContent = "🌙";
+                localStorage.setItem("theme", "dark");
+            }
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+
+                        // Support for nested data arrays
+                        const dataset = Array.isArray(data) ? data : Object.values(data)[0];
+                        if (!Array.isArray(dataset)) throw new Error("Unsupported JSON format.");
+
+                        createDashboard(dataset);
+                        errorMessage.textContent = "";
+                        document.getElementById("downloadPdf").disabled = false;
+                        document.getElementById("printCharts").disabled = false;
+                    } catch (error) {
+                        errorMessage.textContent = "Invalid JSON file. Please try again.";
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function createDashboard(data) {
+            const dashboard = document.getElementById('dashboard');
+            dashboard.innerHTML = '';
+
+            const keys = Object.keys(data[0]);
+            const numericalKeys = keys.filter(key => typeof data[0][key] === 'number');
+            const categoricalKeys = keys.filter(key => typeof data[0][key] === 'string');
+
+            // Number Chart
+            if (numericalKeys.length > 0) {
+                numericalKeys.forEach(numKey => {
+                    const total = data.reduce((sum, row) => sum + row[numKey], 0);
+
+                    const div = document.createElement('div');
+                    div.className = 'number-chart';
+                    div.innerHTML = `<h3>${numKey} Total</h3><p>${total}</p>`;
+                    dashboard.appendChild(div);
+                });
+            }
+
+            // Pie Chart
+            if (numericalKeys.length > 0 && categoricalKeys.length > 0) {
+                const catKey = categoricalKeys[0];
+                const numKey = numericalKeys[0];
+
+                const categories = Array.from(new Set(data.map(row => row[catKey])));
+                const values = categories.map(cat =>
+                    data.filter(row => row[catKey] === cat)
+                        .reduce((sum, row) => sum + row[numKey], 0)
+                );
+
+                const divPie = document.createElement('div');
+                divPie.className = 'chart';
+                dashboard.appendChild(divPie);
+
+                Plotly.newPlot(divPie, [{
+                    labels: categories,
+                    values: values,
+                    type: 'pie'
+                }], { title: `Distribution of ${numKey} by ${catKey}` });
+            }
+        }
+
+        
+        // Export Dashboard as PDF
+        document.getElementById('downloadPdf').addEventListener('click', async function () {
+            const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+            const dashboard = document.getElementById('dashboard');
+            const charts = dashboard.querySelectorAll('.chart, .number-chart');
+            const margin = 10;
+            let yOffset = margin;
+
+            for (const chart of charts) {
+                const canvas = await html2canvas(chart, { scale: 2 });
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidth = 190; // A4 width - margins
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                if (yOffset + imgHeight > pdf.internal.pageSize.getHeight() - margin) {
+                    pdf.addPage();
+                    yOffset = margin;
+                }
+
+                pdf.addImage(imgData, 'PNG', margin, yOffset, imgWidth, imgHeight);
+                yOffset += imgHeight + margin;
+            }
+
+            pdf.save('dashboard.pdf');
+        });
+
+        // Print Dashboard
+        document.getElementById('printCharts').addEventListener('click', function () {
+            const printWindow = window.open('', '_blank');
+            const dashboard = document.getElementById('dashboard').innerHTML;
+            printWindow.document.write('<html><body>');
+            printWindow.document.body.innerHTML = dashboard;
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print();
+        });
+    </script>
+</body>
+</html>
