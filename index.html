@@ -3,218 +3,772 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DataVision</title>
-    <script src="https://cdn.plot.ly/plotly-2.26.1.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <title>Universal Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #ffffff;
-            color: #000000;
-            transition: all 0.3s ease;
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #1a1a1a;
+            --card-bg: #f3f4f6;
+            --border-color: #e5e7eb;
+            --accent-color: #3b82f6;
         }
-        header {
+        
+        .dark-mode {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+            --card-bg: #2d2d2d;
+            --border-color: #404040;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            padding: 1rem;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        #dashboard {
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 1.5rem;
+            padding: 8px;
+            transition: transform 0.3s;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--accent-color);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .action-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .input-section {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-        }
-        .chart {
-            width: 100%;
-            height: 400px;
-        }
-        .number-chart {
-            background: #007bff;
-            color: white;
-            text-align: center;
-            padding: 20px;
-            font-size: 1.5em;
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        #upload-container {
             margin-bottom: 20px;
         }
-        #export-container button {
-            margin-right: 10px;
-            padding: 10px 20px;
-            background-color: #007bff;
+
+        .upload-section, .json-input-section {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .json-input {
+            width: 100%;
+            height: 150px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: monospace;
+            resize: vertical;
+        }
+
+        .run-btn {
+            background: var(--accent-color);
             color: white;
             border: none;
-            border-radius: 5px;
+            padding: 8px 16px;
+            border-radius: 8px;
             cursor: pointer;
-        }
-        #dark-mode-toggle {
-            cursor: pointer;
-            font-size: 1.5em;
-        }
-        #error-message {
-            color: red;
-            font-weight: bold;
             margin-top: 10px;
+            font-weight: 500;
         }
+
+        .dashboard {
+            margin-top: 20px;
+        }
+
+        .chart-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--card-bg);
+            border-radius: 12px;
+        }
+
+        .chart-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .chart-toggle:hover {
+            transform: translateY(-1px);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        #summaryStats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                padding: 0;
+                background: white;
+            }
+            .dashboard {
+                margin-top: 0;
+            }
+            .chart-container, .stat-card {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+        }
+
         @media (max-width: 768px) {
-            #dashboard {
+            .input-section {
                 grid-template-columns: 1fr;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+.json-input {
+            width: 100%;
+            height: 100px; /* Reduced height */
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: monospace;
+            resize: none; /* Make undraggable */
+        }
+
+        .popup-menu {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 300px;
+        }
+
+        .popup-menu.active {
+            display: block;
+        }
+
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+
+        .popup-overlay.active {
+            display: block;
+        }
+
+        .popup-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .close-popup {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px;
+        }
+
+        @media print {
+            .chart-container {
+                width: 100%;
+                height: 100%;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                margin-bottom: 30px;
+            }
+
+            .grid {
+                display: block !important;
+            }
+
+            .stat-card {
+                width: 100%;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                margin-bottom: 20px;
+            }
+
+            #summaryStats {
+                display: block !important;
             }
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>DataVision</h1>
-        <div id="dark-mode-toggle">🌞</div>
-    </header>
-    <div id="upload-container">
-        <input type="file" id="fileInput" accept=".json" />
-        <p>Upload your JSON data to generate a dashboard.</p>
-        <p id="error-message"></p>
+    <div class="container">
+        <div class="header no-print">
+            <h1>Universal Data Dashboard</h1>
+            <div class="actions">
+                <button onclick="toggleTheme()" class="theme-toggle" title="Toggle theme">
+                    <i class="fas fa-sun"></i>
+                </button>
+                <button onclick="downloadPDF()" class="action-btn" title="Download PDF">
+                    <i class="fas fa-file-pdf"></i> Download PDF
+                </button>
+                <button onclick="printDashboard()" class="action-btn" title="Print">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+
+        <div class="input-section no-print">
+            <div class="upload-section">
+                <h3>Upload JSON File</h3>
+                <input type="file" id="fileInput" accept=".json">
+                <button onclick="handleFileUploadClick()" class="run-btn">
+                    <i class="fas fa-play"></i> Run Analysis
+                </button>
+            </div>
+            <div class="json-input-section">
+                <h3>Or Paste JSON Data</h3>
+                <textarea id="jsonInput" class="json-input" placeholder='Paste your JSON data here...'></textarea>
+                <button onclick="handleJsonInput()" class="run-btn">
+                    <i class="fas fa-play"></i> Run Analysis
+                </button>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="chart-controls no-print">
+                <h3 style="width: 100%; margin: 0 0 10px 0;">Toggle Charts</h3>
+                <div id="chartToggles"></div>
+            </div>
+            <div id="summaryStats"></div>
+            <div class="grid" id="chartsGrid"></div>
+        </div>
     </div>
-    <div id="export-container">
-        <button id="downloadPdf" disabled>Download as PDF</button>
-        <button id="printCharts" disabled>Print Charts</button>
+
+    <div class="actions">
+        <button onclick="toggleTheme()" class="theme-toggle" title="Toggle theme">
+            <i class="fas fa-sun"></i>
+        </button>
+        <button onclick="toggleChartMenu()" class="action-btn" title="Toggle Charts">
+            <i class="fas fa-chart-line"></i> Charts
+        </button>
+        <button onclick="downloadPDF()" class="action-btn" title="Download PDF">
+            <i class="fas fa-file-pdf"></i> PDF
+        </button>
+        <button onclick="printDashboard()" class="action-btn" title="Print">
+            <i class="fas fa-print"></i> Print
+        </button>
     </div>
-    <div id="dashboard"></div>
+
+    <!-- Add popup menu -->
+    <div class="popup-overlay" onclick="toggleChartMenu()"></div>
+    <div class="popup-menu">
+        <div class="popup-header">
+            <h3>Toggle Charts</h3>
+            <button class="close-popup" onclick="toggleChartMenu()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="popup-content" id="chartToggles"></div>
+    </div>
 
     <script>
-        const darkModeToggle = document.getElementById("dark-mode-toggle");
-        const errorMessage = document.getElementById("error-message");
+        // Chart configurations
+        const chartConfigs = {
+            pieChart: { title: 'Distribution', visible: true },
+            barChart: { title: 'Comparison', visible: true },
+            lineChart: { title: 'Trend', visible: true },
+            scatterChart: { title: 'Correlation', visible: true },
+            boxPlot: { title: 'Distribution Analysis', visible: true },
+            heatmap: { title: 'Correlation Matrix', visible: true }
+        };
 
-        // Load dark mode preference
-        const userPref = localStorage.getItem("theme");
-        if (userPref === "dark") {
-            document.body.style.backgroundColor = "#333";
-            document.body.style.color = "#fff";
-            darkModeToggle.textContent = "🌙";
+        // Load chart preferences
+        function loadChartPreferences() {
+            const savedPrefs = localStorage.getItem('chartPreferences');
+            if (savedPrefs) {
+                const prefs = JSON.parse(savedPrefs);
+                Object.keys(chartConfigs).forEach(chart => {
+                    if (prefs[chart] !== undefined) {
+                        chartConfigs[chart].visible = prefs[chart];
+                    }
+                });
+            }
+            updateChartToggles();
         }
 
-        darkModeToggle.addEventListener("click", () => {
-            if (document.body.style.backgroundColor === "rgb(51, 51, 51)") {
-                document.body.style.backgroundColor = "#fff";
-                document.body.style.color = "#000";
-                darkModeToggle.textContent = "🌞";
-                localStorage.setItem("theme", "light");
+        // Save chart preferences
+        function saveChartPreferences() {
+            const prefs = {};
+            Object.keys(chartConfigs).forEach(chart => {
+                prefs[chart] = chartConfigs[chart].visible;
+            });
+            localStorage.setItem('chartPreferences', JSON.stringify(prefs));
+        }
+
+        // Update chart toggles UI
+        function updateChartToggles() {
+            const container = document.getElementById('chartToggles');
+            container.innerHTML = Object.entries(chartConfigs)
+                .map(([id, config]) => `
+                    <label class="chart-toggle">
+                        <input type="checkbox" 
+                               ${config.visible ? 'checked' : ''} 
+                               onchange="toggleChart('${id}', this.checked)">
+                        ${config.title}
+                    </label>
+                `).join('');
+        }
+
+        // Toggle chart visibility
+        function toggleChart(chartId, visible) {
+            chartConfigs[chartId].visible = visible;
+            saveChartPreferences();
+            if (window.hasData) {
+                document.getElementById(chartId).closest('.chart-container').style.display = 
+                    visible ? 'block' : 'none';
+            }
+        }
+
+        // Theme handling
+        function loadTheme() {
+            const isDark = localStorage.getItem('darkMode') === 'true';
+            document.body.classList.toggle('dark-mode', isDark);
+            updateThemeIcon();
+            if (window.hasData) {
+                updateChartsTheme();
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+            updateThemeIcon();
+            if (window.hasData) {
+                updateChartsTheme();
+            }
+        }
+
+        function updateThemeIcon() {
+            const isDark = document.body.classList.contains('dark-mode');
+            const icon = document.querySelector('.theme-toggle i');
+            icon.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
+        }
+
+        // PDF and Print functions
+        function downloadPDF() {
+            const dashboard = document.querySelector('.dashboard');
+            const opt = {
+                margin: 1,
+                filename: 'dashboard.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+            html2pdf().set(opt).from(dashboard).save();
+        }
+
+        function printDashboard() {
+            window.print();
+        }
+
+        function updateChartsTheme() {
+            const isDark = document.body.classList.contains('dark-mode');
+            const layout = {
+                paper_bgcolor: isDark ? '#2d2d2d' : '#f3f4f6',
+                plot_bgcolor: isDark ? '#2d2d2d' : '#f3f4f6',
+                font: { color: isDark ? '#ffffff' : '#1a1a1a' }
+            };
+            
+            Object.keys(chartConfigs).forEach(chartId => {
+                const chart = document.getElementById(chartId);
+                if (chart?.data) {
+                    Plotly.relayout(chartId, layout);
+                }
+            });
+        }
+
+        // Data handling
+        function handleFileUploadClick() {
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput.files.length > 0) {
+                handleFileUpload(fileInput.files[0]);
             } else {
-                document.body.style.backgroundColor = "#333";
-                document.body.style.color = "#fff";
-                darkModeToggle.textContent = "🌙";
-                localStorage.setItem("theme", "dark");
+                alert('Please select a file first');
             }
-        });
+        }
 
-        document.getElementById('fileInput').addEventListener('change', function (event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    try {
-                        const data = JSON.parse(e.target.result);
+        function handleJsonInput() {
+            const jsonInput = document.getElementById('jsonInput');
+            try {
+                const data = JSON.parse(jsonInput.value);
+                const analysis = analyzeData(data);
+                if (analysis) {
+                    createVisualizations(analysis);
+                } else {
+                    alert('Invalid data structure. Please provide an array of objects or an object containing an array.');
+                }
+            } catch (error) {
+                alert('Invalid JSON format. Please check your input.');
+            }
+        }
 
-                        // Support for nested data arrays
-                        const dataset = Array.isArray(data) ? data : Object.values(data)[0];
-                        if (!Array.isArray(dataset)) throw new Error("Unsupported JSON format.");
-
-                        createDashboard(dataset);
-                        errorMessage.textContent = "";
-                        document.getElementById("downloadPdf").disabled = false;
-                        document.getElementById("printCharts").disabled = false;
-                    } catch (error) {
-                        errorMessage.textContent = "Invalid JSON file. Please try again.";
+        function handleFileUpload(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    const analysis = analyzeData(data);
+                    if (analysis) {
+                        createVisualizations(analysis);
+                    } else {
+                        alert('Invalid data structure. Please provide an array of objects or an object containing an array.');
                     }
-                };
-                reader.readAsText(file);
+                } catch (error) {
+                    alert('Error parsing JSON file');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function analyzeData(data) {
+            const dataArray = Array.isArray(data) ? data : Object.values(data)[0];
+            if (!Array.isArray(dataArray)) return null;
+
+            const keys = [...new Set(dataArray.flatMap(obj => Object.keys(obj)))];
+            const analysis = {};
+            
+            keys.forEach(key => {
+                const values = dataArray.map(obj => obj[key]);
+                const type = typeof values[0];
+
+                if (type === 'number') {
+                    const sortedValues = [...values].sort((a, b) => a - b);
+                    analysis[key] = {
+                        type: 'number',
+                        values: values,
+                        sum: values.reduce((a, b) => a + b, 0),
+                        avg: values.reduce((a, b) => a + b, 0) / values.length,
+                        min: Math.min(...values),
+                        max: Math.max(...values),
+                        median: sortedValues[Math.floor(sortedValues.length / 2)]
+                    };
+                } else if (type === 'string' || type === 'boolean') {
+                    const frequencies = values.reduce((acc, val) => {
+                        acc[val] = (acc[val] || 0) + 1;
+                        return acc;
+                    }, {});
+                    analysis[key] = {
+                        type: type,
+                        values: values,
+                        frequencies: frequencies,
+                        unique: Object.keys(frequencies).length
+                    };
+                }
+            });
+
+            return analysis;
+        }
+
+        function createVisualizations(analysis) {
+            window.hasData = true;
+            const isDark = document.body.classList.contains('dark-mode');
+            const layoutBase = {
+                paper_bgcolor: isDark ? '#2d2d2d' : '#f3f4f6',
+                plot_bgcolor: isDark ? '#2d2d2d' : '#f3f4f6',
+                font: { color: isDark ? '#ffffff' : '#1a1a1a' },
+                margin: { t: 40, r: 10, b: 40, l: 60 }
+            };
+
+            // Create summary statistics
+            const summaryHTML = [];
+            for (const [key, value] of Object.entries(analysis)) {
+                if (value.type === 'number') {
+                    summaryHTML.push(`
+                        <div class="stat-card">
+                            <h3>${key}</h3>
+                            <p>Sum: ${value.sum.toFixed(2)}</p>
+                            <p>Average: ${value.avg.toFixed(2)}</p>
+                            <p>Min: ${value.min.toFixed(2)}</p>
+                            <p>Max: ${value.max.toFixed(2)}</p>
+                            <p>Median: ${value.median.toFixed(2)}</p>
+                        </div>
+                    `);
+                } else {
+                    summaryHTML.push(`
+                        <div class="stat-card">
+                            <h3>${key}</h3>
+                            <p>Unique Values: ${value.unique}</p>
+                            <p>Most Common: ${Object.entries(value.frequencies)
+                                .sort((a, b) => b[1] - a[1])[0][0]}</p>
+                        </div>
+                    `);
+                }
             }
-        });
+            document.getElementById('summaryStats').innerHTML = summaryHTML.join('');
 
-        function createDashboard(data) {
-            const dashboard = document.getElementById('dashboard');
-            dashboard.innerHTML = '';
+            // Prepare chart grid
+            const chartsGrid = document.getElementById('chartsGrid');
+            chartsGrid.innerHTML = Object.keys(chartConfigs)
+                .map(id => `
+                    <div class="chart-container" style="display: ${chartConfigs[id].visible ? 'block' : 'none'}">
+                        <div id="${id}"></div>
+                    </div>
+                `).join('');
 
-            const keys = Object.keys(data[0]);
-            const numericalKeys = keys.filter(key => typeof data[0][key] === 'number');
-            const categoricalKeys = keys.filter(key => typeof data[0][key] === 'string');
+            // Find categorical and numerical fields
+            const categoricalFields = Object.entries(analysis)
+                .filter(([_, value]) => value.type === 'string')
+                .map(([key, _]) => key);
+            
+            const numericalFields = Object.entries(analysis)
+                .filter(([_, value]) => value.type === 'number')
+                .map(([key, _]) => key);
 
-            // Number Chart
-            if (numericalKeys.length > 0) {
-                numericalKeys.forEach(numKey => {
-                    const total = data.reduce((sum, row) => sum + row[numKey], 0);
+            // Create all charts
+            if (categoricalFields.length > 0) {
+                // Pie Chart
+                const field = categoricalFields[0];
+                const { frequencies } = analysis[field];
+                Plotly.newPlot('pieChart', [{
+                    values: Object.values(frequencies),
+                    labels: Object.keys(frequencies),
+                    type: 'pie'
+                }], {
+                    ...layoutBase,
+                    title: `Distribution of ${field}`
+                });
 
-                    const div = document.createElement('div');
-                    div.className = 'number-chart';
-                    div.innerHTML = `<h3>${numKey} Total</h3><p>${total}</p>`;
-                    dashboard.appendChild(div);
+                // Bar Chart
+                const field2 = categoricalFields[1] || categoricalFields[0];
+                Plotly.newPlot('barChart', [{
+                    x: Object.keys(analysis[field2].frequencies),
+                    y: Object.values(analysis[field2].frequencies),
+                    type: 'bar'
+                }], {
+                    ...layoutBase,
+                    title: `Count by ${field2}`
                 });
             }
 
-            // Pie Chart
-            if (numericalKeys.length > 0 && categoricalKeys.length > 0) {
-                const catKey = categoricalKeys[0];
-                const numKey = numericalKeys[0];
+            if (numericalFields.length > 0) {
+                // Line Chart
+                const field = numericalFields[0];
+                Plotly.newPlot('lineChart', [{
+                    y: analysis[field].values,
+                    type: 'scatter',
+                    mode: 'lines+markers'
+                }], {
+                    ...layoutBase,
+                    title: `Trend of ${field}`
+                });
 
-                const categories = Array.from(new Set(data.map(row => row[catKey])));
-                const values = categories.map(cat =>
-                    data.filter(row => row[catKey] === cat)
-                        .reduce((sum, row) => sum + row[numKey], 0)
+                // Box Plot
+                Plotly.newPlot('boxPlot', 
+                    numericalFields.map(field => ({
+                        y: analysis[field].values,
+                        type: 'box',
+                        name: field
+                    })), {
+                        ...layoutBase,
+                        title: 'Distribution Analysis'
+                    }
                 );
 
-                const divPie = document.createElement('div');
-                divPie.className = 'chart';
-                dashboard.appendChild(divPie);
+                // Scatter Plot
+                if (numericalFields.length >= 2) {
+                    Plotly.newPlot('scatterChart', [{
+                        x: analysis[numericalFields[0]].values,
+                        y: analysis[numericalFields[1]].values,
+                        mode: 'markers',
+                        type: 'scatter'
+                    }], {
+                        ...layoutBase,
+                        title: `${numericalFields[0]} vs ${numericalFields[1]}`,
+                        xaxis: { title: numericalFields[0] },
+                        yaxis: { title: numericalFields[1] }
+                    });
 
-                Plotly.newPlot(divPie, [{
-                    labels: categories,
-                    values: values,
-                    type: 'pie'
-                }], { title: `Distribution of ${numKey} by ${catKey}` });
+                    // Heatmap for correlation matrix
+                    const correlationMatrix = numericalFields.map(field1 => 
+                        numericalFields.map(field2 => {
+                            const values1 = analysis[field1].values;
+                            const values2 = analysis[field2].values;
+                            return calculateCorrelation(values1, values2);
+                        })
+                    );
+
+                    Plotly.newPlot('heatmap', [{
+                        z: correlationMatrix,
+                        x: numericalFields,
+                        y: numericalFields,
+                        type: 'heatmap',
+                        colorscale: 'Viridis'
+                    }], {
+                        ...layoutBase,
+                        title: 'Correlation Matrix'
+                    });
+                }
             }
         }
 
-        
-        // Export Dashboard as PDF
-        document.getElementById('downloadPdf').addEventListener('click', async function () {
-            const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-            const dashboard = document.getElementById('dashboard');
-            const charts = dashboard.querySelectorAll('.chart, .number-chart');
-            const margin = 10;
-            let yOffset = margin;
 
-            for (const chart of charts) {
-                const canvas = await html2canvas(chart, { scale: 2 });
-                const imgData = canvas.toDataURL('image/png');
-                const imgWidth = 190; // A4 width - margins
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        // Add new function for toggle menu
+        function toggleChartMenu() {
+            document.querySelector('.popup-overlay').classList.toggle('active');
+            document.querySelector('.popup-menu').classList.toggle('active');
+        }
 
-                if (yOffset + imgHeight > pdf.internal.pageSize.getHeight() - margin) {
-                    pdf.addPage();
-                    yOffset = margin;
-                }
+        // Modify PDF function for better layout
+        function downloadPDF() {
+            const dashboard = document.querySelector('.dashboard');
+            const opt = {
+                margin: 0.5,
+                filename: 'dashboard.pdf',
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    letterRendering: true
+                },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
+                pagebreak: { mode: ['avoid-all'] }
+            };
+            html2pdf().set(opt).from(dashboard).save();
+        }
 
-                pdf.addImage(imgData, 'PNG', margin, yOffset, imgWidth, imgHeight);
-                yOffset += imgHeight + margin;
-            }
+        function calculateCorrelation(x, y) {
+            const n = x.length;
+            const sum_x = x.reduce((a, b) => a + b, 0);
+            const sum_y = y.reduce((a, b) => a + b, 0);
+            const sum_xy = x.reduce((a, b, i) => a + b * y[i], 0);
+            const sum_x2 = x.reduce((a, b) => a + b * b, 0);
+            const sum_y2 = y.reduce((a, b) => a + b * b, 0);
+            
+            const numerator = n * sum_xy - sum_x * sum_y;
+            const denominator = Math.sqrt((n * sum_x2 - sum_x * sum_x) * (n * sum_y2 - sum_y * sum_y));
+            
+            return denominator === 0 ? 0 : numerator / denominator;
+        }
 
-            pdf.save('dashboard.pdf');
-        });
-
-        // Print Dashboard
-        document.getElementById('printCharts').addEventListener('click', function () {
-            const printWindow = window.open('', '_blank');
-            const dashboard = document.getElementById('dashboard').innerHTML;
-            printWindow.document.write('<html><body>');
-            printWindow.document.body.innerHTML = dashboard;
-            printWindow.document.write('</body></html>');
-            printWindow.document.close();
-            printWindow.print();
-        });
+        // Initialize
+        loadTheme();
+        loadChartPreferences();
+        updateChartToggles();
     </script>
 </body>
 </html>
+
+
